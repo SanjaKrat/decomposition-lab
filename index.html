@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html{color-scheme:light dark}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Лабораторія декомпозиції</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Rubik:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --ink:#172340; --ink-2:#46526E; --ink-3:#6B7792;
+  --paper:#F4F7FC; --grid:#E1E8F3; --card:#FDFEFF; --line:#C9D3EA;
+  --blue:#2E5BFF; --red:#D9432B; --green:#16876A; --brown:#8A5A3B; --violet:#7A4FD0; --teal:#0E7C8C;
+  --yellow:#FFD447; --yellow-ink:#172340;
+  --ok-bg:#E3F4EE; --ok-ink:#0F6B53; --warn-bg:#FFF4D1; --bad-bg:#FBE6E2; --bad-ink:#A8321F;
+  --screen:#0F1A33; --screen-grid:#18264A;
+  --display:'Unbounded','Arial Black',system-ui,sans-serif;
+  --body:'Rubik','Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#E9EEF9; --ink-2:#B7C1D9; --ink-3:#8793AE;
+    --paper:#0E1528; --grid:#16203A; --card:#16203A; --line:#2A3656;
+    --blue:#7C9BFF; --red:#FF7F68; --green:#4CC9A0; --brown:#D0A07E; --violet:#B59BFF; --teal:#4FC3D2;
+    --ok-bg:#12352C; --ok-ink:#7FE0BF; --warn-bg:#3A3217; --bad-bg:#3D1E19; --bad-ink:#FF9C88;
+    --screen:#081022; --screen-grid:#121D38;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#E9EEF9; --ink-2:#B7C1D9; --ink-3:#8793AE;
+  --paper:#0E1528; --grid:#16203A; --card:#16203A; --line:#2A3656;
+  --blue:#7C9BFF; --red:#FF7F68; --green:#4CC9A0; --brown:#D0A07E; --violet:#B59BFF; --teal:#4FC3D2;
+  --ok-bg:#12352C; --ok-ink:#7FE0BF; --warn-bg:#3A3217; --bad-bg:#3D1E19; --bad-ink:#FF9C88;
+  --screen:#081022; --screen-grid:#121D38;
+}
+*{box-sizing:border-box}
+body{
+  background:repeating-linear-gradient(0deg,var(--grid) 0 1px,transparent 1px 32px),repeating-linear-gradient(90deg,var(--grid) 0 1px,transparent 1px 32px),var(--paper);
+  color:var(--ink); font-family:var(--body); font-size:16px; line-height:1.45;
+  padding:0 16px; min-height:100vh;
+}
+.wrap{max-width:1180px; margin:0 auto; padding-block:24px 64px}
+header.top{display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:12px 24px; margin-bottom:18px}
+.eyebrow{font-size:13px; font-weight:600; letter-spacing:2.5px; text-transform:uppercase; color:var(--blue)}
+h1{font-family:var(--display); font-weight:800; font-size:clamp(26px,4.4vw,44px); line-height:1.08; margin:6px 0 6px; text-wrap:balance}
+.sub{color:var(--ink-2); margin:0; max-width:62ch}
+.formula{display:flex; flex-wrap:wrap; align-items:center; gap:6px; font-weight:600; font-size:14px}
+.formula span{padding:6px 12px; border:2px solid var(--ink); border-radius:999px; background:var(--card)}
+.formula span.big{background:var(--ink); color:var(--paper)}
+.formula span.done{background:var(--yellow); color:var(--yellow-ink); border-color:var(--yellow-ink)}
+.formula i{font-style:normal; color:var(--ink-3)}
+
+nav.tabs{display:flex; gap:8px; overflow-x:auto; padding:4px 2px 10px; margin-bottom:14px; scrollbar-width:thin}
+nav.tabs button{flex:0 0 auto; font:600 15px var(--body); color:var(--ink); background:var(--card); border:2px solid var(--ink); border-radius:14px; padding:9px 16px; cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--ink); color:var(--paper)}
+nav.tabs button:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible{outline:3px solid var(--blue); outline-offset:2px}
+
+.panel{background:var(--card); border:2px solid var(--ink); border-radius:20px; padding:20px}
+.panel h2{font-family:var(--display); font-weight:700; font-size:clamp(19px,2.4vw,24px); margin:0 0 4px; text-wrap:balance}
+.panel .lead{color:var(--ink-2); margin:0 0 16px; max-width:70ch}
+.btn{font:600 15px var(--body); border:2px solid var(--ink); background:var(--card); color:var(--ink); border-radius:12px; padding:8px 14px; cursor:pointer; line-height:1.2}
+.btn.primary{background:var(--ink); color:var(--paper)}
+.btn.yellow{background:var(--yellow); color:var(--yellow-ink); border-color:var(--yellow-ink)}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+.btn.small{font-size:13px; padding:5px 10px; border-radius:9px}
+.row{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+.seg{display:inline-flex; border:2px solid var(--ink); border-radius:12px; overflow:hidden}
+.seg button{font:600 14px var(--body); border:0; background:var(--card); color:var(--ink); padding:8px 12px; cursor:pointer}
+.seg button + button{border-left:2px solid var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--yellow); color:var(--yellow-ink)}
+.muted{color:var(--ink-3)}
+
+/* ---------- GAME ---------- */
+.game-grid{display:grid; grid-template-columns:minmax(0,420px) minmax(0,1fr); gap:20px; align-items:start}
+@media (max-width:860px){ .game-grid{grid-template-columns:1fr} }
+.screen{background:var(--screen); border-radius:16px; padding:12px; border:2px solid var(--ink)}
+.hud{display:flex; justify-content:space-between; color:#C9D3EA; font:600 13px var(--body); letter-spacing:1px; text-transform:uppercase; padding:0 4px 8px; font-variant-numeric:tabular-nums}
+.hud b{color:#FFD447; font-family:var(--display); font-size:15px; letter-spacing:0}
+canvas#snake{display:block; width:100%; aspect-ratio:1/1; max-width:100%; border-radius:8px; touch-action:none}
+.pad{display:grid; grid-template-columns:repeat(3,56px); grid-template-rows:repeat(2,48px); gap:6px; justify-content:center; margin-top:10px}
+.pad button{font:700 22px var(--body); background:#22325C; color:#F4F7FC; border:0; border-radius:10px; cursor:pointer}
+.pad button:active{background:#FFD447; color:#172340}
+.pad .u{grid-column:2; grid-row:1} .pad .l{grid-column:1; grid-row:2} .pad .d{grid-column:2; grid-row:2} .pad .r{grid-column:3; grid-row:2}
+.controls{display:flex; flex-direction:column; gap:10px; margin-top:12px}
+.say{margin-top:12px; background:var(--warn-bg); border:2px solid var(--ink); border-radius:14px; padding:10px 14px; min-height:64px}
+.say .who{font-size:12px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--ink-3)}
+.say .what{font-weight:500}
+.bugs{margin-top:12px; border:2px dashed var(--red); border-radius:14px; padding:10px 14px}
+.bugs h3{margin:0 0 6px; font-size:14px; letter-spacing:1px; text-transform:uppercase; color:var(--red)}
+.bugs label{display:flex; gap:8px; align-items:flex-start; font-size:15px; margin:6px 0; cursor:pointer}
+.bugs input{margin-top:3px; width:18px; height:18px; accent-color:var(--red)}
+.flow-box{overflow-x:auto}
+svg#flow{display:block; width:100%; min-width:420px; max-width:620px; height:auto; margin:0 auto}
+#flow .node .shape{fill:var(--card); stroke:var(--ink); stroke-width:2.5; transition:fill .15s}
+#flow .node text{fill:var(--ink); font:500 14px var(--body); text-anchor:middle; dominant-baseline:middle}
+#flow .node.kind-term .shape{fill:var(--ink)} #flow .node.kind-term text{fill:var(--paper); font-weight:700}
+#flow .node.kind-cond .shape{stroke:var(--blue)}
+#flow .node.kind-io .shape{stroke:var(--green)}
+#flow .node.visited .shape{fill:var(--ok-bg)}
+#flow .node.kind-term.visited .shape{fill:var(--ink)}
+#flow .node.active .shape{fill:#FFD447; stroke:#172340; stroke-width:4}
+#flow .node.active text{fill:#172340}
+#flow .node.forgotten{opacity:.35}
+#flow .node.forgotten .shape{stroke-dasharray:6 5}
+#flow .edge{fill:none; stroke:var(--ink-3); stroke-width:2.2; marker-end:url(#arr)}
+#flow .edge.visited{stroke:var(--green); stroke-width:3; marker-end:url(#arr-g)}
+#flow .edge.active{stroke:#E0A800; stroke-width:4.5; marker-end:url(#arr-y)}
+#flow .lbl{font:700 12px var(--body); fill:var(--ink-2); letter-spacing:.5px}
+#flow .lbl.yes{fill:var(--green)} #flow .lbl.no{fill:var(--red)}
+.legend{display:flex; flex-wrap:wrap; gap:8px 18px; font-size:14px; color:var(--ink-2); margin-top:10px; justify-content:center}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend svg{width:34px; height:22px}
+.legend svg *{fill:var(--card); stroke:var(--ink); stroke-width:2}
+
+/* ---------- MAP ---------- */
+.map-tools{display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; margin-bottom:12px}
+.counter{font-weight:600; font-variant-numeric:tabular-nums}
+.counter b{font-family:var(--display); color:var(--green)}
+.map-scroll{overflow:auto; border:2px solid var(--line); border-radius:16px; background:var(--paper); max-height:72vh}
+.map-canvas{position:relative}
+.map-canvas svg{position:absolute; left:0; top:0; overflow:visible}
+.map-canvas path{fill:none; stroke-width:3}
+.mnode{position:absolute; transform:translateY(-50%); border-radius:12px; padding:7px 11px; font-size:14px; line-height:1.25; background:var(--card); border:2.5px solid var(--c); color:var(--ink); cursor:default; display:flex; flex-direction:column; gap:3px}
+.mnode.has-kids{cursor:pointer}
+.mnode.depth0{background:var(--ink); color:var(--paper); border-color:var(--ink); font-family:var(--display); font-weight:700; font-size:16px; padding:12px 14px}
+.mnode.depth1{background:var(--c); color:var(--paper); font-weight:600; border-color:var(--c)}
+.mnode.leaf{border-style:solid; background:var(--card)}
+.mnode.leaf::before{content:"✓"; position:absolute; left:-11px; top:50%; transform:translateY(-50%); width:20px; height:20px; border-radius:50%; background:var(--green); color:#fff; font:700 12px/20px var(--body); text-align:center}
+.mnode .more{align-self:flex-start; font-size:12px; font-weight:700; border-radius:999px; padding:1px 8px; background:var(--yellow); color:var(--yellow-ink)}
+.mnode .tool{align-self:flex-start; font-size:11.5px; font-weight:600; border-radius:6px; padding:1px 7px; background:var(--grid); color:var(--ink-2)}
+.mnode.fresh{animation:pop .35s ease-out}
+@keyframes pop{from{transform:translateY(-50%) scale(.85); opacity:.3} to{transform:translateY(-50%) scale(1); opacity:1}}
+.plan{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px}
+.phase{border:2px solid var(--ink); border-radius:14px; background:var(--card); padding:12px 14px}
+.phase h3{margin:0 0 2px; font-family:var(--display); font-size:15px}
+.phase .goal{font-size:13px; color:var(--ink-3); margin:0 0 8px}
+.phase ol{margin:0; padding-left:20px; display:flex; flex-direction:column; gap:5px; font-size:14px}
+.phase .tag{display:inline-block; font-size:11px; font-weight:700; background:var(--grid); color:var(--ink-2); padding:0 6px; border-radius:5px; margin-left:4px}
+.note{margin-top:12px; padding:10px 14px; border-left:5px solid var(--yellow); background:var(--warn-bg); border-radius:0 12px 12px 0; font-size:15px}
+
+/* ---------- QUIZ ---------- */
+.quiz{display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:20px}
+@media (max-width:860px){ .quiz{grid-template-columns:1fr} }
+.qcard{border:3px solid var(--ink); border-radius:18px; background:var(--card); padding:22px; display:flex; flex-direction:column; gap:16px; min-height:250px}
+.qnum{font-size:13px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--ink-3); font-variant-numeric:tabular-nums}
+.qtask{font-family:var(--display); font-weight:700; font-size:clamp(20px,2.6vw,28px); line-height:1.25; text-wrap:balance}
+.qbtns{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.qbtns button{font:600 16px var(--body); padding:14px 10px; border-radius:14px; border:2.5px solid var(--ink); background:var(--card); color:var(--ink); cursor:pointer}
+.qbtns .split{border-color:var(--blue)} .qbtns .exec{border-color:var(--green)}
+.qfb{border-radius:14px; padding:12px 14px; font-size:15px}
+.qfb.ok{background:var(--ok-bg); color:var(--ok-ink)} .qfb.bad{background:var(--bad-bg); color:var(--bad-ink)}
+.qfb b{display:block; margin-bottom:2px}
+.test3{border:2px solid var(--ink); border-radius:18px; background:var(--card); padding:18px}
+.test3 h3{font-family:var(--display); font-size:17px; margin:0 0 10px}
+.test3 ol{margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:10px}
+.test3 li{display:grid; grid-template-columns:36px 1fr; gap:10px; align-items:start}
+.test3 .n{width:36px; height:36px; border-radius:50%; background:var(--yellow); color:var(--yellow-ink); font:800 16px/36px var(--display); text-align:center; border:2px solid var(--yellow-ink)}
+.test3 strong{display:block}
+.test3 span.m{font-size:14px; color:var(--ink-2)}
+.dots{display:flex; gap:5px; flex-wrap:wrap}
+.dots i{width:14px; height:14px; border-radius:50%; background:var(--grid); border:2px solid var(--line)}
+.dots i.ok{background:var(--green); border-color:var(--green)} .dots i.bad{background:var(--red); border-color:var(--red)} .dots i.cur{border-color:var(--ink)}
+
+/* ---------- BUILDER ---------- */
+.builder{display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); gap:20px; align-items:start}
+@media (max-width:900px){ .builder{grid-template-columns:1fr} }
+.tpl{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px}
+.tpl button{font:600 14px var(--body); border:2px solid var(--ink); border-radius:999px; padding:6px 12px; background:var(--card); color:var(--ink); cursor:pointer}
+.tpl button[aria-pressed="true"]{background:var(--ink); color:var(--paper)}
+.tree{list-style:none; margin:0; padding:0}
+.tree .tree{padding-left:22px; margin-left:10px; border-left:2px dashed var(--line)}
+.tnode{margin:8px 0}
+.trow{display:flex; gap:6px; align-items:center; flex-wrap:wrap; background:var(--card); border:2px solid var(--ink); border-radius:12px; padding:6px 8px}
+.trow.ok{border-color:var(--green); background:var(--ok-bg)}
+.trow.root{background:var(--ink); border-color:var(--ink)}
+.trow.root input[type=text]{color:var(--paper); font-family:var(--display); font-weight:700; font-size:15px}
+.trow input[type=text]{flex:1 1 180px; min-width:0; font:500 15px var(--body); color:var(--ink); background:transparent; border:0; padding:6px 4px}
+.trow input[type=text]::placeholder{color:var(--ink-3)}
+.trow .badge{font-size:12px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--green); color:var(--paper)}
+.trow .badge.todo{background:var(--yellow); color:var(--yellow-ink)}
+.trow.root .btn{background:var(--paper); color:var(--ink); border-color:var(--paper)}
+.checks{margin:6px 0 0 8px; padding:10px 12px; border:2px solid var(--green); border-radius:12px; background:var(--card); display:flex; flex-direction:column; gap:6px; font-size:14px}
+.checks label{display:flex; gap:8px; align-items:flex-start; cursor:pointer}
+.checks input{width:18px; height:18px; margin-top:1px; accent-color:var(--green)}
+.hints{display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 0}
+.hints button{font:500 13px var(--body); border:2px dashed var(--blue); color:var(--blue); background:transparent; border-radius:999px; padding:4px 10px; cursor:pointer}
+.side{display:flex; flex-direction:column; gap:14px; position:sticky; top:calc(env(safe-area-inset-top,0px) + 12px)}
+.stat{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+.stat div{border:2px solid var(--ink); border-radius:12px; padding:8px 10px; background:var(--card)}
+.stat b{display:block; font-family:var(--display); font-size:24px; font-variant-numeric:tabular-nums}
+.stat span{font-size:12px; color:var(--ink-3); font-weight:600}
+.bar{height:12px; border-radius:999px; background:var(--grid); border:2px solid var(--ink); overflow:hidden}
+.bar i{display:block; height:100%; background:var(--green); width:0; transition:width .3s}
+textarea#export{width:100%; min-height:170px; font:14px/1.45 var(--body); color:var(--ink); background:var(--paper); border:2px solid var(--line); border-radius:12px; padding:10px; resize:vertical}
+.toast{font-size:14px; font-weight:600; color:var(--ok-ink)}
+
+/* ---------- TOOLS ---------- */
+.tools{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:12px}
+.tool-card{border:2px solid var(--ink); border-radius:16px; background:var(--card); padding:14px; display:flex; flex-direction:column; gap:8px}
+.tool-card h3{margin:0; font-family:var(--display); font-size:17px}
+.tool-card p{margin:0; font-size:14px; color:var(--ink-2)}
+.tool-card .job{font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--c)}
+.chips{display:flex; flex-wrap:wrap; gap:5px; margin-top:auto}
+.chips span{font-size:12px; font-weight:600; padding:2px 8px; border-radius:6px; background:var(--grid); color:var(--ink-2)}
+.chips span.free{background:var(--ok-bg); color:var(--ok-ink)}
+.chips span.part{background:var(--warn-bg); color:var(--ink)}
+.tool-card a{color:var(--blue); font-weight:600; font-size:14px}
+.filters{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px}
+.filters button{font:600 13px var(--body); border:2px solid var(--ink); border-radius:999px; padding:5px 11px; background:var(--card); color:var(--ink); cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--yellow); color:var(--yellow-ink); border-color:var(--yellow-ink)}
+@media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important} }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Інформатика · 7 клас · Урок 3</div>
+      <h1>Лабораторія декомпозиції</h1>
+      <p class="sub">Беремо велику задачу — гру «Змійка» — і ділимо її, доки кожен шматок не стане зрозумілою дією.</p>
+    </div>
+    <div class="formula" aria-label="Проблема, підзадачі, виконувані задачі">
+      <span class="big">Проблема</span><i>→</i><span>підзадачі</span><i>→</i><span class="done">задачі ✓</span>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Розділи">
+    <button role="tab" id="t-game" aria-selected="true" data-tab="game">1 · Гра й алгоритм</button>
+    <button role="tab" id="t-map" aria-selected="false" data-tab="map">2 · Карта «Змійки»</button>
+    <button role="tab" id="t-quiz" aria-selected="false" data-tab="quiz">3 · Ділити чи робити?</button>
+    <button role="tab" id="t-build" aria-selected="false" data-tab="build">4 · Мій проєкт</button>
+    <button role="tab" id="t-tools" aria-selected="false" data-tab="tools">5 · Інструменти</button>
+  </nav>
+
+  <!-- ============ GAME ============ -->
+  <section class="panel" id="p-game" role="tabpanel" aria-labelledby="t-game">
+    <h2>Змійка, яка показує свій алгоритм</h2>
+    <p class="lead">Кожен блок схеми — це одна маленька задача. Жовтим світиться той крок, який комп’ютер виконує саме зараз.</p>
+    <div class="game-grid">
+      <div>
+        <div class="screen">
+          <div class="hud"><span>Рахунок <b id="score">0</b></span><span>Довжина <b id="len">3</b></span><span>Кадр <b id="frame">0</b></span></div>
+          <canvas id="snake" width="400" height="400" aria-label="Ігрове поле змійки"></canvas>
+          <div class="pad" aria-label="Кнопки керування">
+            <button class="u" data-dir="up" aria-label="Вгору">↑</button>
+            <button class="l" data-dir="left" aria-label="Ліворуч">←</button>
+            <button class="d" data-dir="down" aria-label="Вниз">↓</button>
+            <button class="r" data-dir="right" aria-label="Праворуч">→</button>
+          </div>
+        </div>
+        <div class="controls">
+          <div class="row">
+            <span class="muted" style="font-size:14px;font-weight:600">Швидкість:</span>
+            <div class="seg" role="group" aria-label="Режим">
+              <button id="m-step" data-mode="step" aria-pressed="false">По кроку</button>
+              <button id="m-slow" data-mode="slow" aria-pressed="true">Повільно</button>
+              <button id="m-game" data-mode="game" aria-pressed="false">Як гра</button>
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn primary" id="run">▶ Старт</button>
+            <button class="btn yellow" id="step" hidden>Наступний крок</button>
+            <button class="btn" id="reset">↺ Заново</button>
+          </div>
+        </div>
+        <div class="say" aria-live="polite"><div class="who" id="say-who">Зараз</div><div class="what" id="say-what">Натисни «Старт» і стеж за схемою праворуч.</div></div>
+        <div class="bugs">
+          <h3>А що, як забути задачу?</h3>
+          <label><input type="checkbox" id="bug-tail"> Забули «Прибрати кінчик хвоста»</label>
+          <label><input type="checkbox" id="bug-hit"> Забули «Перевірити стіни й хвіст»</label>
+        </div>
+      </div>
+      <div>
+        <div class="flow-box">
+          <svg id="flow" viewBox="0 0 560 730" role="img" aria-label="Блок-схема ігрового циклу змійки">
+            <defs>
+              <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#6B7792"/></marker>
+              <marker id="arr-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#16876A"/></marker>
+              <marker id="arr-y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#E0A800"/></marker>
+            </defs>
+            <g id="edges"></g>
+            <g id="nodes"></g>
+          </svg>
+        </div>
+        <div class="legend" aria-label="Фігури блок-схеми">
+          <span><svg viewBox="0 0 34 22"><rect x="2" y="3" width="30" height="16" rx="8"/></svg>початок / кінець</span>
+          <span><svg viewBox="0 0 34 22"><rect x="3" y="3" width="28" height="16"/></svg>дія</span>
+          <span><svg viewBox="0 0 34 22"><path d="M17 2 L32 11 L17 20 L2 11 Z"/></svg>умова: так / ні</span>
+          <span><svg viewBox="0 0 34 22"><path d="M8 3 H32 L26 19 H2 Z"/></svg>вивід на екран</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MAP ============ -->
+  <section class="panel" id="p-map" role="tabpanel" aria-labelledby="t-map" hidden>
+    <h2>Інтелект-карта: ділимо «Змійку» на частини</h2>
+    <p class="lead">Натискай на гілку, щоб розкласти її далі. Ділимо, доки кожен листок не стане задачею, яку можна зробити за раз. Такі задачі позначені зеленою галочкою.</p>
+    <div class="map-tools">
+      <div class="seg" role="group" aria-label="Вигляд">
+        <button id="v-map" aria-pressed="true">Карта</button>
+        <button id="v-plan" aria-pressed="false">План роботи</button>
+      </div>
+      <div class="row" id="levels">
+        <span class="muted" style="font-size:14px;font-weight:600">Показати рівнів:</span>
+        <button class="btn small" data-level="1">1</button>
+        <button class="btn small" data-level="2">2</button>
+        <button class="btn small" data-level="3">3</button>
+        <button class="btn small" data-level="9">усі</button>
+      </div>
+      <label class="row" style="font-size:14px;font-weight:600;cursor:pointer"><input type="checkbox" id="show-tools" style="width:18px;height:18px"> Інструменти</label>
+      <span class="counter" id="map-count"></span>
+    </div>
+    <div id="map-view">
+      <div class="map-scroll"><div class="map-canvas" id="map-canvas"></div></div>
+    </div>
+    <div id="plan-view" hidden>
+      <div class="plan" id="plan"></div>
+      <div class="note"><b>Чому саме такий порядок?</b> Спершу робимо найменшу версію, яка вже працює: квадратик повзе по полю. Малюнки й звук — наприкінці. Без них гра працює, а без руху — ні. Так роблять справжні розробники: невеликий крок, перевірка, наступний крок.</div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="panel" id="p-quiz" role="tabpanel" aria-labelledby="t-quiz" hidden>
+    <h2>Ділити далі чи вже робити?</h2>
+    <p class="lead">Прочитай задачу й вирішуй: її вже можна виконувати чи треба ділити далі? Перевіряй за трьома питаннями праворуч.</p>
+    <div class="quiz">
+      <div class="qcard">
+        <div class="row" style="justify-content:space-between"><span class="qnum" id="q-num">Задача 1 з 10</span><div class="dots" id="q-dots"></div></div>
+        <div class="qtask" id="q-task"></div>
+        <div class="qbtns" id="q-btns">
+          <button class="split" data-ans="split">✂ Ділити далі</button>
+          <button class="exec" data-ans="exec">✓ Можна робити</button>
+        </div>
+        <div class="qfb" id="q-fb" hidden></div>
+        <div class="row" style="justify-content:flex-end"><button class="btn primary" id="q-next" hidden>Далі →</button></div>
+      </div>
+      <div class="test3">
+        <h3>Тест трьох питань</h3>
+        <ol>
+          <li><span class="n">1</span><div><strong>Що саме зробити?</strong><span class="m">Є конкретна дія: намалювати, додати, перевірити. «Зробити гарно» не підходить.</span></div></li>
+          <li><span class="n">2</span><div><strong>Як я перевірю, що зроблено?</strong><span class="m">Можна показати результат і сказати: так, готово.</span></div></li>
+          <li><span class="n">3</span><div><strong>Зроблю за один раз?</strong><span class="m">Приблизно до 20 хвилин і без нових питань «а як?».</span></div></li>
+        </ol>
+        <p class="note" style="margin-bottom:0">Три «так» — задача готова до роботи. Хоч одне «ні» — ділимо далі.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BUILDER ============ -->
+  <section class="panel" id="p-build" role="tabpanel" aria-labelledby="t-build" hidden>
+    <h2>Мій проєкт: розклади свою проблему</h2>
+    <p class="lead">Обери проєкт або впиши свій. Додавай підзадачі, доки кожен листок не пройде тест трьох питань (кнопка «✓ Перевірити»). Мета — щонайменше 8 задач, які можна виконувати.</p>
+    <div class="tpl" id="tpl" role="group" aria-label="Проєкт"></div>
+    <div class="builder">
+      <div>
+        <ul class="tree" id="tree"></ul>
+        <div class="hints" id="hints"></div>
+      </div>
+      <aside class="side">
+        <div class="stat">
+          <div><b id="s-ok">0</b><span>можна робити</span></div>
+          <div><b id="s-todo">0</b><span>ще ділити</span></div>
+          <div><b id="s-all">0</b><span>усього гілок</span></div>
+        </div>
+        <div><div class="bar"><i id="s-bar"></i></div><div class="muted" style="font-size:13px;margin-top:4px" id="s-goal">Мета: 8 задач</div></div>
+        <div>
+          <label for="export" style="font-weight:600;font-size:14px">Список задач для чату</label>
+          <textarea id="export" readonly></textarea>
+          <div class="row" style="margin-top:6px"><button class="btn primary" id="copy">Скопіювати</button><span class="toast" id="toast" aria-live="polite"></span></div>
+        </div>
+        <button class="btn small" id="clear" style="align-self:flex-start">Почати спочатку</button>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ TOOLS ============ -->
+  <section class="panel" id="p-tools" role="tabpanel" aria-labelledby="t-tools" hidden>
+    <h2>Цифрові інструменти для кожної задачі</h2>
+    <p class="lead">Коли задачу розкладено, стає ясно, який інструмент потрібен: у чому малювати, де взяти звук, де записати план. Порівняй інструменти за ознаками з підручника (с. 14). Якого інструмента бракує? Напиши в чат.</p>
+    <div class="filters" id="filters"></div>
+    <div class="tools" id="tools"></div>
+  </section>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+/* ---------- tabs ---------- */
+function showTab(id){
+  $$('nav.tabs button').forEach(b=>b.setAttribute('aria-selected', b.dataset.tab===id?'true':'false'));
+  ['game','map','quiz','build','tools'].forEach(t=>{ $('#p-'+t).hidden = t!==id; });
+  if(id==='map') renderMap();
+  if(id!=='game') pause();
+  store.set('lab-tab',id);
+}
+$$('nav.tabs button').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
+
+/* =========================================================
+   1. SNAKE + LIVE FLOWCHART
+   ========================================================= */
+const N=16, cv=$('#snake'), ctx=cv.getContext('2d');
+const DPR=Math.min(window.devicePixelRatio||1,2); cv.width=400*DPR; cv.height=400*DPR; ctx.scale(DPR,DPR);
+const CELL=400/N;
+const DIRS={up:{x:0,y:-1,s:'↑'},down:{x:0,y:1,s:'↓'},left:{x:-1,y:0,s:'←'},right:{x:1,y:0,s:'→'}};
+const G={snake:[],dir:'right',queue:[],apple:null,score:0,frame:0,msg:null,newHead:null};
+let cur='start', timer=null, running=false, mode='slow';
+let bugTail=false, bugHit=false;
+
+const NODES={
+  start:{k:'term',x:250,y:32,w:140,h:44,t:['Початок']},
+  init:{k:'act',x:250,y:108,w:240,h:56,t:['Поставити змійку й яблуко,','рахунок = 0']},
+  key:{k:'cond',x:250,y:205,w:200,h:86,t:['Натиснуто','стрілку?']},
+  turn:{k:'act',x:460,y:205,w:150,h:50,t:['Змінити','напрям']},
+  move:{k:'act',x:250,y:300,w:240,h:50,t:['Посунути голову','на 1 клітинку']},
+  hit:{k:'cond',x:250,y:400,w:220,h:90,t:['Голова в стіні','або в хвості?']},
+  over:{k:'io',x:460,y:400,w:170,h:52,t:['«Гра закінчена»']},
+  end:{k:'term',x:460,y:480,w:120,h:44,t:['Кінець']},
+  eat:{k:'cond',x:250,y:510,w:200,h:86,t:['Голова','на яблуці?']},
+  grow:{k:'act',x:460,y:600,w:170,h:56,t:['Рахунок +1,','нове яблуко']},
+  tail:{k:'act',x:250,y:600,w:200,h:50,t:['Прибрати','кінчик хвоста']},
+  draw:{k:'io',x:250,y:685,w:200,h:48,t:['Показати кадр']}
+};
+const EDGES={
+  'start>init':{d:'M250 54 V78'},
+  'init>key':{d:'M250 136 V160'},
+  'key>turn':{d:'M350 205 H383',l:'Так',lx:356,ly:196,c:'yes'},
+  'key>move':{d:'M250 248 V273',l:'Ні',lx:226,ly:266,c:'no'},
+  'turn>move':{d:'M460 230 V262 H258'},
+  'move>hit':{d:'M250 325 V353'},
+  'hit>over':{d:'M360 400 H379',l:'Так',lx:352,ly:388,c:'yes'},
+  'over>end':{d:'M460 426 V456'},
+  'hit>eat':{d:'M250 445 V465',l:'Ні',lx:258,ly:457,c:'no'},
+  'eat>grow':{d:'M350 510 H460 V570',l:'Так',lx:360,ly:500,c:'yes'},
+  'eat>tail':{d:'M250 553 V573',l:'Ні',lx:258,ly:565,c:'no'},
+  'grow>draw':{d:'M460 628 V685 H352'},
+  'tail>draw':{d:'M250 625 V659'},
+  'draw>key':{d:'M150 685 H40 V148 H244',l:'повторити',lx:48,ly:420,c:'loop'}
+};
+function shapePath(n){
+  const {x,y,w,h}=n, l=x-w/2, r=x+w/2, t=y-h/2, b=y+h/2;
+  if(n.k==='cond') return `<path class="shape" d="M${x} ${t} L${r} ${y} L${x} ${b} L${l} ${y} Z"/>`;
+  if(n.k==='io') return `<path class="shape" d="M${l+14} ${t} H${r} L${r-14} ${b} H${l} Z"/>`;
+  if(n.k==='term') return `<rect class="shape" x="${l}" y="${t}" width="${w}" height="${h}" rx="${h/2}"/>`;
+  return `<rect class="shape" x="${l}" y="${t}" width="${w}" height="${h}" rx="6"/>`;
+}
+(function drawFlow(){
+  let e='';
+  for(const [id,ed] of Object.entries(EDGES)){
+    e+=`<path class="edge" id="e-${id.replace('>','-')}" d="${ed.d}"/>`;
+    if(ed.l){
+      if(ed.c==='loop') e+=`<text class="lbl" x="${ed.lx}" y="${ed.ly}" transform="rotate(-90 ${ed.lx} ${ed.ly})" text-anchor="middle">${ed.l}</text>`;
+      else e+=`<text class="lbl ${ed.c}" x="${ed.lx}" y="${ed.ly}">${ed.l}</text>`;
+    }
+  }
+  $('#edges').innerHTML=e;
+  let s='';
+  for(const [id,n] of Object.entries(NODES)){
+    const lh=17, y0=n.y-(n.t.length-1)*lh/2;
+    s+=`<g class="node kind-${n.k}" id="n-${id}">${shapePath(n)}${n.t.map((line,i)=>`<text x="${n.x}" y="${y0+i*lh}">${line}</text>`).join('')}</g>`;
+  }
+  $('#nodes').innerHTML=s;
+})();
+
+function freeCell(){
+  const busy=new Set(G.snake.map(c=>c.x+','+c.y)); const free=[];
+  for(let x=0;x<N;x++)for(let y=0;y<N;y++) if(!busy.has(x+','+y)) free.push({x,y});
+  return free[Math.floor(Math.random()*free.length)];
+}
+const inField=c=>c.x>=0&&c.y>=0&&c.x<N&&c.y<N;
+const NAMES={start:'Початок',init:'Підготовка',key:'Умова «Натиснуто стрілку?»',turn:'Дія «Змінити напрям»',move:'Дія «Посунути голову»',hit:'Умова «Голова в стіні або в хвості?»',over:'Вивід «Гра закінчена»',end:'Кінець',eat:'Умова «Голова на яблуці?»',grow:'Дія «Рахунок +1, нове яблуко»',tail:'Дія «Прибрати кінчик хвоста»',draw:'Вивід «Показати кадр»'};
+
+function exec(id){
+  switch(id){
+    case 'start': return ['init','Програма запустилась.'];
+    case 'init':
+      G.snake=[{x:6,y:8},{x:5,y:8},{x:4,y:8}]; G.dir='right'; G.queue=[]; G.score=0; G.frame=0; G.msg=null;
+      G.apple={x:11,y:8};
+      return ['key','Змійка з 3 клітинок стоїть на полі, яблуко поруч, рахунок 0.'];
+    case 'key':
+      if(G.queue.length) return ['turn','Так — гравець натиснув '+DIRS[G.queue[0]].s+'.'];
+      return ['move','Ні — стрілку не натискали, їдемо далі в той самий бік '+DIRS[G.dir].s+'.'];
+    case 'turn': G.dir=G.queue.shift(); return ['move','Напрям тепер '+DIRS[G.dir].s+'.'];
+    case 'move': {
+      const h=G.snake[0], d=DIRS[G.dir]; const nh={x:h.x+d.x,y:h.y+d.y}; G.snake.unshift(nh);
+      return ['hit','Нова голова з’явилась попереду. Поки що змійка на 1 клітинку довша — подивимось, що далі.'];
+    }
+    case 'hit': {
+      const h=G.snake[0];
+      const wall=!inField(h), self=G.snake.slice(1).some(c=>c.x===h.x&&c.y===h.y);
+      if(bugHit){
+        if(G.snake.every(c=>!inField(c))){ G.msg='Змійка втекла з поля!'; return ['end','Змійка повністю втекла за край. Ніхто ж не перевірив стіни!']; }
+        return ['eat', wall?'Задачу «перевірити стіни» забули — і голова вже за краєм поля…':'Цю перевірку забули, тож комп’ютер питання навіть не ставить.'];
+      }
+      if(wall||self) return ['over', wall?'Так! Голова вийшла за край поля.':'Так! Голова врізалась у власний хвіст.'];
+      return ['eat','Ні — голова на вільній клітинці.'];
+    }
+    case 'over': G.msg='Гра закінчена'; G.best=Math.max(G.best||0,G.score); return ['end','На екрані напис «Гра закінчена». Рахунок: '+G.score+'.'];
+    case 'end': return [null,'Програма зупинилась. Натисни «Грати ще раз».'];
+    case 'eat': {
+      const h=G.snake[0];
+      if(G.apple&&h.x===G.apple.x&&h.y===G.apple.y) return ['grow','Так! Хрум — яблуко з’їдено.'];
+      return ['tail','Ні — яблука тут немає.'];
+    }
+    case 'grow': G.score++; G.apple=freeCell(); return ['draw','Рахунок '+G.score+'. Хвіст НЕ прибираємо — тому змійка стала довшою.'];
+    case 'tail':
+      if(bugTail) return ['draw','Задачу «прибрати хвіст» забули! Змійка росте й без яблук.'];
+      G.snake.pop(); return ['draw','Останню клітинку хвоста прибрано — довжина знову та сама. Так змійка «повзе».'];
+    case 'draw': G.frame++; return ['key','Кадр '+G.frame+' на екрані. Повертаємось до початку циклу.'];
+  }
+}
+
+function paint(){
+  const W=400;
+  ctx.fillStyle='#0F1A33'; ctx.fillRect(0,0,W,W);
+  ctx.strokeStyle='#18264A'; ctx.lineWidth=1;
+  for(let i=1;i<N;i++){ ctx.beginPath(); ctx.moveTo(i*CELL+.5,0); ctx.lineTo(i*CELL+.5,W); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,i*CELL+.5); ctx.lineTo(W,i*CELL+.5); ctx.stroke(); }
+  if(G.apple){
+    const ax=G.apple.x*CELL+CELL/2, ay=G.apple.y*CELL+CELL/2;
+    ctx.fillStyle='#FF5A45'; ctx.beginPath(); ctx.arc(ax,ay+1,CELL*.36,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#4CC9A0'; ctx.beginPath(); ctx.ellipse(ax+4,ay-CELL*.34,4,2.4,-.6,0,Math.PI*2); ctx.fill();
+  }
+  G.snake.forEach((c,i)=>{
+    if(!inField(c)) return;
+    const pad=i===0?1.5:3;
+    ctx.fillStyle=i===0?'#FFD447':(i%2?'#3DDC97':'#34C487');
+    roundRect(c.x*CELL+pad,c.y*CELL+pad,CELL-pad*2,CELL-pad*2,6); ctx.fill();
+  });
+  const h=G.snake[0];
+  if(h&&inField(h)){
+    const d=DIRS[G.dir], cx=h.x*CELL+CELL/2, cy=h.y*CELL+CELL/2;
+    const px=-d.y, py=d.x; ctx.fillStyle='#172340';
+    [1,-1].forEach(s=>{ctx.beginPath(); ctx.arc(cx+d.x*4+px*5*s, cy+d.y*4+py*5*s, 2.4,0,Math.PI*2); ctx.fill();});
+  }
+  if(G.msg){
+    ctx.fillStyle='rgba(15,26,51,.78)'; ctx.fillRect(0,W/2-44,W,88);
+    ctx.fillStyle='#FFD447'; ctx.font='800 26px Unbounded, Arial Black, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(G.msg,W/2,W/2-8);
+    ctx.fillStyle='#E9EEF9'; ctx.font='500 15px Rubik, Arial, sans-serif'; ctx.fillText('Рахунок: '+G.score,W/2,W/2+24);
+  }
+  $('#score').textContent=G.score; $('#len').textContent=G.snake.length; $('#frame').textContent=G.frame;
+}
+function roundRect(x,y,w,h,r){ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();}
+
+function clearMarks(){ $$('#flow .active,#flow .visited').forEach(el=>el.classList.remove('active','visited')); }
+function mark(id,edge,cls){
+  const n=$('#n-'+id); if(n) n.classList.add(cls);
+  if(edge){ const e=$('#e-'+edge.replace('>','-')); if(e) e.classList.add(cls); }
+}
+function say(id,text){ $('#say-who').textContent=NAMES[id]||'Зараз'; $('#say-what').textContent=text; }
+
+let prev=null;
+function stepOne(){
+  if(cur===null) return false;
+  const id=cur; const [next,text]=exec(id);
+  $$('#flow .active').forEach(el=>{el.classList.remove('active'); el.classList.add('visited');});
+  if(id==='key') $$('#flow .visited').forEach(el=>el.classList.remove('visited'));
+  mark(id, prev?prev+'>'+id:null, 'active');
+  say(id,text); paint();
+  prev=id; cur=next;
+  if(next===null){ stop(); $('#run').textContent='↻ Грати ще раз'; $('#step').disabled=true; }
+  return true;
+}
+function frameAtOnce(){
+  // виконати цілий цикл за один «тік» і підсвітити весь пройдений шлях
+  clearMarks(); let guard=0, lastText='';
+  while(cur!==null && guard++<20){
+    const id=cur; const [next,text]=exec(id); lastText=text;
+    mark(id, prev?prev+'>'+id:null,'visited'); prev=id; cur=next;
+    if(id==='draw'||next===null){ break; }
+  }
+  if(prev) $('#n-'+prev).classList.add('active');
+  say(prev,lastText); paint();
+  if(cur===null){ stop(); $('#run').textContent='↻ Грати ще раз'; }
+}
+function tick(){ if(mode==='game') frameAtOnce(); else stepOne(); }
+function start(){
+  if(cur===null){ resetGame(); }
+  if(mode==='step'){ stepOne(); return; }
+  running=true; $('#run').textContent='❚❚ Пауза';
+  clearInterval(timer); timer=setInterval(tick, mode==='game'?170:650);
+}
+function stop(){ running=false; clearInterval(timer); timer=null; if(cur!==null) $('#run').textContent='▶ Далі'; }
+function pause(){ if(running) stop(); }
+function resetGame(){
+  stop(); cur='start'; prev=null; clearMarks(); G.msg=null;
+  exec('init'); cur='start'; G.frame=0; paint();
+  $('#run').textContent= mode==='step'?'▶ Перший крок':'▶ Старт'; $('#step').disabled=false;
+  say('start','Натисни «Старт» і стеж за схемою праворуч.');
+}
+$('#run').addEventListener('click',()=>{ if(running) stop(); else start(); });
+$('#step').addEventListener('click',()=>{ if(cur===null) resetGame(); stepOne(); });
+$('#reset').addEventListener('click',resetGame);
+$$('.seg [data-mode]').forEach(b=>b.addEventListener('click',()=>{
+  mode=b.dataset.mode; $$('.seg [data-mode]').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
+  const was=running; stop();
+  $('#step').hidden = mode!=='step'; $('#run').hidden = mode==='step';
+  if(was && mode!=='step') start();
+}));
+$('#bug-tail').addEventListener('change',e=>{bugTail=e.target.checked; $('#n-tail').classList.toggle('forgotten',bugTail);});
+$('#bug-hit').addEventListener('change',e=>{bugHit=e.target.checked; $('#n-hit').classList.toggle('forgotten',bugHit);});
+
+function pushDir(d){
+  const last=G.queue.length?G.queue[G.queue.length-1]:G.dir;
+  const a=DIRS[d], b=DIRS[last];
+  if(d===last || (a.x===-b.x && a.y===-b.y)) return; // розворот назад заборонено
+  if(G.queue.length<2) G.queue.push(d);
+}
+document.addEventListener('keydown',e=>{
+  if($('#p-game').hidden) return;
+  if(e.target.matches('input,textarea')) return;
+  const map={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',KeyW:'up',KeyS:'down',KeyA:'left',KeyD:'right'};
+  const d=map[e.code]; if(d){ e.preventDefault(); pushDir(d); }
+});
+$$('.pad button').forEach(b=>b.addEventListener('click',()=>pushDir(b.dataset.dir)));
+let sx=0,sy=0;
+cv.addEventListener('touchstart',e=>{sx=e.touches[0].clientX; sy=e.touches[0].clientY;},{passive:true});
+cv.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy; if(Math.max(Math.abs(dx),Math.abs(dy))<24) return; pushDir(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'));});
+resetGame();
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(paint);
+
+/* =========================================================
+   2. DECOMPOSITION MAP
+   ========================================================= */
+const BR=['--blue','--green','--red','--brown','--teal','--violet'];
+const TREE={t:'Зробити гру «Змійка»',c:[
+  {t:'Ігрове поле',c:[
+    {t:'Розмір і сітка',c:[
+      {t:'Вибрати розмір поля: 16×16 клітинок',ok:1,ph:1,tool:'папір / Scratch'},
+      {t:'Намалювати сітку на екрані',ok:1,ph:1,tool:'Scratch'}]},
+    {t:'Вибрати кольори фону й змійки',ok:1,ph:5,tool:'Canva'}]},
+  {t:'Змійка',c:[
+    {t:'Вигляд',c:[{t:'Намалювати голову й клітинку тіла 16×16 пікселів',ok:1,ph:5,tool:'Piskel'}]},
+    {t:'Тіло',c:[{t:'Зберігати тіло як список клітинок (голова — перша)',ok:1,ph:1,tool:'Scratch: список'}]},
+    {t:'Рух',c:[
+      {t:'Щокадру додавати нову голову попереду',ok:1,ph:1,tool:'Scratch'},
+      {t:'Щокадру прибирати останню клітинку хвоста',ok:1,ph:1,tool:'Scratch'},
+      {t:'Швидкість: 1 крок за 0,15 секунди',ok:1,ph:1,tool:'Scratch: чекати'}]}]},
+  {t:'Керування',c:[
+    {t:'Стрілки ← ↑ → ↓ змінюють напрям',ok:1,ph:2,tool:'Scratch'},
+    {t:'Заборонити розворот назад',ok:1,ph:2,tool:'Scratch'},
+    {t:'Кнопки на екрані для телефона',ok:1,ph:2,tool:'Scratch'}]},
+  {t:'Їжа',c:[
+    {t:'Поява',c:[
+      {t:'Ставити яблуко у випадкову вільну клітинку',ok:1,ph:3,tool:'Scratch: випадкове'},
+      {t:'Намалювати яблуко 16×16 пікселів',ok:1,ph:5,tool:'Piskel'}]},
+    {t:'Змійка з’їла яблуко',c:[
+      {t:'Перевірити: голова на клітинці яблука?',ok:1,ph:3,tool:'Scratch: якщо'},
+      {t:'Не прибирати хвіст — змійка довшає',ok:1,ph:3,tool:'Scratch'},
+      {t:'Звук «хрум»',ok:1,ph:5,tool:'BeepBox / Freesound'}]}]},
+  {t:'Рахунок',c:[
+    {t:'+1 за кожне яблуко',ok:1,ph:3,tool:'Scratch: змінна'},
+    {t:'Показувати рахунок угорі екрана',ok:1,ph:3,tool:'Scratch'},
+    {t:'Запам’ятовувати рекорд',ok:1,ph:5,tool:'Scratch: змінна'}]},
+  {t:'Кінець гри',c:[
+    {t:'Зіткнення',c:[
+      {t:'Перевірити: голова вийшла за край поля?',ok:1,ph:4,tool:'Scratch: якщо'},
+      {t:'Перевірити: голова врізалась у своє тіло?',ok:1,ph:4,tool:'Scratch: якщо'}]},
+    {t:'Вивести напис «Гра закінчена»',ok:1,ph:4,tool:'Scratch'},
+    {t:'Кнопка «Грати ще раз»',ok:1,ph:4,tool:'Scratch'}]}
+]};
+let brI=0;
+(function prep(n,d,color){ n.d=d; if(d===1) color=BR[brI++%BR.length]; n.color=color; n.open=d<1; (n.c||[]).forEach(ch=>prep(ch,d+1,color)); })(TREE,0,'--ink');
+function setLevel(L){ (function f(n){ n.open=n.d<L; (n.c||[]).forEach(f); })(TREE); renderMap(); }
+let showTools=false, fresh=new Set();
+function renderMap(){
+  const host=$('#map-canvas'); if(!host) return;
+  const ROW=showTools?76:60, COLW=[200,210,210,290], GAP=44;
+  const xs=[0]; for(let i=1;i<6;i++) xs[i]=xs[i-1]+(COLW[i-1]||280)+GAP;
+  let row=0; const items=[];
+  (function lay(n){
+    const kids=n.open&&n.c?n.c:[];
+    if(!kids.length){ n.y=row*ROW+ROW/2+10; row++; }
+    else{ kids.forEach(lay); n.y=(kids[0].y+kids[kids.length-1].y)/2; }
+    n.x=xs[n.d]; n.w=COLW[n.d]||280; items.push(n);
+  })(TREE);
+  const H=row*ROW+20, W=Math.max(...items.map(n=>n.x+n.w))+30;
+  host.style.width=W+'px'; host.style.height=H+'px';
+  let paths='';
+  items.forEach(n=>{ if(n.open&&n.c) n.c.forEach(ch=>{
+    const x1=n.x+n.w, y1=n.y, x2=ch.x-(ch.ok?12:0), y2=ch.y, mx=(x1+x2)/2;
+    paths+=`<path d="M${x1} ${y1} C${mx} ${y1} ${mx} ${y2} ${x2} ${y2}" style="stroke:var(${ch.color})"/>`;
+  }); });
+  let html=`<svg width="${W}" height="${H}" aria-hidden="true">${paths}</svg>`;
+  items.forEach((n,i)=>{
+    const hidden=n.c&&!n.open?countLeaves(n):0;
+    const cls=['mnode','depth'+Math.min(n.d,2)]; if(n.ok) cls.push('leaf'); if(n.c) cls.push('has-kids'); if(fresh.has(n)) cls.push('fresh');
+    html+=`<div class="${cls.join(' ')}" data-i="${i}" style="left:${n.x+(n.ok?10:0)}px;top:${n.y}px;width:${n.w-(n.ok?10:0)}px;--c:var(${n.color})" ${n.c?'role="button" tabindex="0" aria-expanded="'+(n.open?'true':'false')+'"':''}>
+      <span>${n.t}</span>${hidden?`<span class="more">розкласти · ще ${hidden}</span>`:''}${n.ok&&showTools&&n.tool?`<span class="tool">${n.tool}</span>`:''}</div>`;
+  });
+  host.innerHTML=html; fresh.clear();
+  host.querySelectorAll('.has-kids').forEach(el=>{
+    const n=items[+el.dataset.i];
+    const toggle=()=>{ n.open=!n.open; if(n.open) n.c.forEach(ch=>fresh.add(ch)); renderMap(); };
+    el.addEventListener('click',toggle);
+    el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggle(); } });
+  });
+  const vis=items.filter(n=>n.ok).length, all=countLeaves(TREE);
+  $('#map-count').innerHTML=`Видно задач ✓: <b>${vis}</b> з ${all}`;
+}
+function countLeaves(n){ return n.c? n.c.reduce((s,c)=>s+countLeaves(c),0) : (n.ok?1:0); }
+$$('#levels [data-level]').forEach(b=>b.addEventListener('click',()=>{ const L=+b.dataset.level; (function f(n){ if(n.d<L && !n.open && n.c) n.c.forEach(ch=>fresh.add(ch)); n.open=n.d<L; (n.c||[]).forEach(f); })(TREE); renderMap(); }));
+$('#show-tools').addEventListener('change',e=>{showTools=e.target.checked; renderMap();});
+const PH=[
+  {t:'Етап 1 · Змійка повзе',g:'Квадратики рухаються по полю'},
+  {t:'Етап 2 · Гравець керує',g:'Змійка слухається стрілок'},
+  {t:'Етап 3 · Їжа й ріст',g:'Є мета: їсти й рахувати'},
+  {t:'Етап 4 · Можна програти',g:'Гра має кінець'},
+  {t:'Етап 5 · Краса',g:'Малюнки, кольори, звук, рекорд'}];
+(function buildPlan(){
+  const leaves=[]; (function f(n){ if(n.ok) leaves.push(n); (n.c||[]).forEach(f); })(TREE);
+  $('#plan').innerHTML=PH.map((p,i)=>`<div class="phase"><h3>${p.t}</h3><p class="goal">${p.g}</p><ol>${leaves.filter(l=>l.ph===i+1).map(l=>`<li>${l.t}<span class="tag">${l.tool.split(':')[0]}</span></li>`).join('')}</ol></div>`).join('');
+})();
+function setView(v){ $('#v-map').setAttribute('aria-pressed',v==='map'); $('#v-plan').setAttribute('aria-pressed',v==='plan'); $('#map-view').hidden=v!=='map'; $('#plan-view').hidden=v!=='plan'; $('#levels').hidden=v!=='map'; }
+$('#v-map').addEventListener('click',()=>{setView('map'); renderMap();}); $('#v-plan').addEventListener('click',()=>setView('plan'));
+
+/* =========================================================
+   3. QUIZ
+   ========================================================= */
+const Q=[
+  {t:'Зробити гру «Змійка»',a:'split',w:'Це ціла проблема. Незрозуміло, з чого почати і коли буде «готово».'},
+  {t:'Намалювати яблуко 16×16 пікселів у Piskel',a:'exec',w:'Зрозуміла дія, результат видно, роботи хвилин на 10.'},
+  {t:'Зробити керування',a:'split',w:'Яке керування? Які клавіші? Що вони змінюють? Треба ділити.'},
+  {t:'Коли натиснуто ←, змінити напрям на «ліворуч»',a:'exec',w:'Одна конкретна дія, перевірка — натиснути ← і подивитись.'},
+  {t:'Зробити, щоб гра була гарна',a:'split',w:'«Гарна» не перевіриш. Що саме: кольори? малюнки? звук?'},
+  {t:'Перевірити, чи вийшла голова за край поля',a:'exec',w:'Одна умова «так / ні» — один ромб у блок-схемі.'},
+  {t:'Додати звуки',a:'split',w:'Які звуки? Коли вони лунають? Де їх узяти? Це кілька задач.'},
+  {t:'Показувати рахунок у лівому верхньому куті',a:'exec',w:'Ясно що і де. Перевірка — з’їсти яблуко й побачити число.'},
+  {t:'Опублікувати гру, щоб друзі пограли',a:'split',w:'Треба: зберегти проєкт, натиснути «Поділитися», скопіювати посилання, надіслати в чат.'},
+  {t:'Вивести «Гра закінчена», коли змійка врізалась',a:'exec',w:'Конкретна дія й чітка умова, коли вона відбувається.'}
+];
+let qi=0; const qres=[];
+function renderQ(){
+  const done=qi>=Q.length;
+  $('#q-dots').innerHTML=Q.map((_,i)=>`<i class="${qres[i]===true?'ok':qres[i]===false?'bad':''} ${i===qi?'cur':''}"></i>`).join('');
+  if(done){
+    const ok=qres.filter(Boolean).length;
+    $('#q-num').textContent='Готово';
+    $('#q-task').textContent=`Правильно: ${ok} з ${Q.length}`;
+    $('#q-btns').hidden=true; $('#q-fb').hidden=false; $('#q-fb').className='qfb ok';
+    $('#q-fb').innerHTML='<b>Напиши в чат свій результат.</b>Помітив закономірність? Задачі «можна робити» починаються з конкретного дієслова й мають видимий результат.';
+    $('#q-next').hidden=false; $('#q-next').textContent='Пройти ще раз'; return;
+  }
+  $('#q-num').textContent=`Задача ${qi+1} з ${Q.length}`; $('#q-task').textContent=Q[qi].t;
+  $('#q-btns').hidden=false; $('#q-fb').hidden=true; $('#q-next').hidden=true; $('#q-next').textContent='Далі →';
+  $$('#q-btns button').forEach(b=>b.disabled=false);
+}
+$$('#q-btns button').forEach(b=>b.addEventListener('click',()=>{
+  const q=Q[qi], right=b.dataset.ans===q.a; qres[qi]=right;
+  $$('#q-btns button').forEach(x=>x.disabled=true);
+  const fb=$('#q-fb'); fb.hidden=false; fb.className='qfb '+(right?'ok':'bad');
+  fb.innerHTML=`<b>${right?'Так!':'Не зовсім.'} ${q.a==='split'?'Це треба ділити далі.':'Це вже можна виконувати.'}</b>${q.w}`;
+  $('#q-next').hidden=false;
+  $('#q-dots').innerHTML=Q.map((_,i)=>`<i class="${qres[i]===true?'ok':qres[i]===false?'bad':''} ${i===qi?'cur':''}"></i>`).join('');
+}));
+$('#q-next').addEventListener('click',()=>{ if(qi>=Q.length){ qi=0; qres.length=0; } else qi++; renderQ(); });
+renderQ();
+
+/* =========================================================
+   4. BUILDER
+   ========================================================= */
+const TPL={
+  flappy:{name:'Гра «Flappy Bird»',root:'Зробити гру «Flappy Bird»',h:['Пташка','Труби','Керування','Рахунок','Кінець гри','Малюнки і звук']},
+  site:{name:'Сайт класу',root:'Зробити сайт нашого класу',h:['Сторінки','Дизайн','Фото й новини','Хто наповнює','Публікація']},
+  video:{name:'Відеоогляд гри',root:'Зняти відеоогляд улюбленої гри',h:['Сценарій','Запис екрана','Голос','Монтаж','Обкладинка','Публікація']},
+  quiz:{name:'Вікторина для класу',root:'Зробити онлайн-вікторину для класу',h:['Питання','Сервіс','Оцінювання','Оформлення','Як надіслати']},
+  own:{name:'Свій проєкт',root:'',h:[]}
+};
+let uid=1; const mk=(t='')=>({id:'n'+(uid++),t,c:[],chk:[false,false,false],open:false});
+let P=store.get('lab-project');
+if(!P||!P.root||!TPL[P.tpl]){ P={tpl:'flappy',root:mk(TPL.flappy.root)}; }
+(function fixIds(n){ const m=+String(n.id).slice(1); if(m>=uid) uid=m+1; n.c.forEach(fixIds); })(P.root);
+const isOk=n=>n.chk.every(Boolean);
+function renderTpl(){
+  $('#tpl').innerHTML=Object.entries(TPL).map(([k,v])=>`<button data-k="${k}" aria-pressed="${P.tpl===k}">${v.name}</button>`).join('');
+  $$('#tpl button').forEach(b=>b.addEventListener('click',()=>{
+    const hasWork=P.root.c.length>0;
+    if(hasWork && !confirmSoft(b)) return;
+    P={tpl:b.dataset.k,root:mk(TPL[b.dataset.k].root)}; renderAll();
+  }));
+}
+let armed=null;
+function confirmSoft(b){ // подвійне натискання замість confirm()
+  if(armed===b){ armed=null; return true; }
+  armed=b; const old=b.textContent; b.textContent='Натисни ще раз — почати заново'; setTimeout(()=>{ if(armed===b){armed=null;} b.textContent=old; },2500); return false;
+}
+function nodeHTML(n,depth){
+  const ok=isOk(n)&&depth>0, leaf=!n.c.length&&depth>0;
+  const badge= depth===0?'' : ok?'<span class="badge">✓ можна робити</span>' : leaf?'<span class="badge todo">ділити?</span>':'';
+  return `<li class="tnode" data-id="${n.id}">
+    <div class="trow ${depth===0?'root':''} ${ok?'ok':''}">
+      <input type="text" id="in-${n.id}" value="${esc(n.t)}" placeholder="${depth===0?'Моя велика проблема…':'Підзадача…'}" aria-label="${depth===0?'Проблема':'Підзадача'}">
+      ${badge}
+      <button class="btn small" data-act="add" title="Додати підзадачу">+ підзадача</button>
+      ${depth>0?`<button class="btn small" data-act="check" aria-expanded="${n.open}">✓ Перевірити</button><button class="btn small" data-act="del" aria-label="Видалити">×</button>`:''}
+    </div>
+    ${depth>0&&n.open?`<div class="checks">
+      ${['Що саме зробити — ясно (є конкретна дія)','Можна перевірити, що зроблено','Зроблю за один раз (до ~20 хв)'].map((q,i)=>`<label><input type="checkbox" id="chk-${n.id}-${i}" data-i="${i}" ${n.chk[i]?'checked':''}> ${q}</label>`).join('')}
+    </div>`:''}
+    ${n.c.length?`<ul class="tree">${n.c.map(ch=>nodeHTML(ch,depth+1)).join('')}</ul>`:''}
+  </li>`;
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function find(id,n=P.root,parent=null){ if(n.id===id) return {n,parent}; for(const c of n.c){ const r=find(id,c,n); if(r) return r; } return null; }
+function renderTree(focusId){
+  $('#tree').innerHTML=nodeHTML(P.root,0);
+  const tpl=TPL[P.tpl]; const used=new Set(P.root.c.map(c=>c.t.trim()));
+  const hs=(tpl?tpl.h:[]).filter(h=>!used.has(h));
+  $('#hints').innerHTML= hs.length?`<span class="muted" style="font-size:13px;align-self:center">Підказки для гілок:</span>`+hs.map(h=>`<button data-h="${esc(h)}">+ ${h}</button>`).join(''):'';
+  $$('#hints button').forEach(b=>b.addEventListener('click',()=>{ P.root.c.push(mk(b.dataset.h)); save(); renderTree(); }));
+  if(focusId){ const el=$('#in-'+focusId); if(el) el.focus(); }
+  stats();
+}
+$('#tree').addEventListener('input',e=>{
+  const li=e.target.closest('.tnode'); if(!li) return; const {n}=find(li.dataset.id);
+  if(e.target.type==='text'){ n.t=e.target.value; save(); stats(); }
+});
+$('#tree').addEventListener('change',e=>{
+  if(e.target.type!=='checkbox') return; const li=e.target.closest('.tnode'); const {n}=find(li.dataset.id);
+  n.chk[+e.target.dataset.i]=e.target.checked; save(); renderTree(); const c=$('#chk-'+n.id+'-'+e.target.dataset.i); if(c) c.focus();
+});
+$('#tree').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-act]'); if(!b) return; const li=b.closest('.tnode'); const {n,parent}=find(li.dataset.id);
+  if(b.dataset.act==='add'){ const ch=mk(); n.c.push(ch); save(); renderTree(ch.id); }
+  if(b.dataset.act==='del'){ parent.c=parent.c.filter(x=>x!==n); save(); renderTree(); }
+  if(b.dataset.act==='check'){ n.open=!n.open; save(); renderTree(); const c=$('#chk-'+n.id+'-0'); if(c) c.focus(); }
+});
+function stats(){
+  const oks=[], todo=[]; let all=0;
+  (function f(n,d){ if(d>0){ all++; if(isOk(n)) oks.push(n); else if(!n.c.length) todo.push(n); } n.c.forEach(c=>f(c,d+1)); })(P.root,0);
+  $('#s-ok').textContent=oks.length; $('#s-todo').textContent=todo.length; $('#s-all').textContent=all;
+  $('#s-bar').style.width=Math.min(100,oks.length/8*100)+'%';
+  $('#s-goal').textContent= oks.length>=8?'Мету виконано! Можна ще ділити й уточнювати.':'Мета: 8 задач · залишилось '+(8-oks.length);
+  const title=P.root.t.trim()||'Мій проєкт';
+  let txt=`Проєкт: ${title}\nЗадачі, які можна робити (${oks.length}):\n`+oks.map((n,i)=>`${i+1}. ${n.t.trim()||'(без назви)'}`).join('\n');
+  if(todo.length) txt+=`\nЩе ділити: `+todo.map(n=>n.t.trim()||'(без назви)').join('; ');
+  $('#export').value=txt;
+}
+function save(){ store.set('lab-project',P); }
+function renderAll(){ renderTpl(); renderTree(); save(); }
+$('#copy').addEventListener('click',async()=>{
+  const ta=$('#export'); let ok=false;
+  try{ await navigator.clipboard.writeText(ta.value); ok=true; }catch(e){ ta.focus(); ta.select(); try{ ok=document.execCommand('copy'); }catch(_){} }
+  $('#toast').textContent= ok?'Скопійовано — встав у чат Meet':'Виділи текст і скопіюй вручну';
+  setTimeout(()=>$('#toast').textContent='',2600);
+});
+$('#clear').addEventListener('click',e=>{ if(!confirmSoft(e.currentTarget)) return; P={tpl:P.tpl,root:mk(TPL[P.tpl].root)}; renderAll(); });
+renderAll();
+
+/* =========================================================
+   5. TOOLS
+   ========================================================= */
+const JOBS={all:'Усі',code:'Програмувати',draw:'Малювати',sound:'Звук',plan:'Планувати',map:'Карти й схеми'};
+const JC={code:'--blue',draw:'--red',sound:'--violet',plan:'--brown',map:'--green'};
+const TOOLS=[
+  {n:'Scratch',j:'code',d:'Збирати програму з блоків. Уся «Змійка» робиться тут.',u:'https://scratch.mit.edu',c:['Веб + програма','Безплатний','ПК і планшет']},
+  {n:'MakeCode Arcade',j:'code',d:'Ретро-ігри з блоків або коду, одразу з ігровою консоллю на екрані.',u:'https://arcade.makecode.com',c:['Веб','Безплатний','ПК, планшет, телефон']},
+  {n:'Piskel',j:'draw',d:'Піксель-арт: малюємо голову змійки та яблуко 16×16.',u:'https://www.piskelapp.com',c:['Веб + програма','Безплатний','ПК']},
+  {n:'Canva',j:'draw',d:'Обкладинка гри, кольорова палітра, постер.',u:'https://www.canva.com',c:['Веб + застосунок','Частково безплатний','Усі пристрої']},
+  {n:'BeepBox',j:'sound',d:'Скласти коротку 8-бітну мелодію прямо в браузері.',u:'https://www.beepbox.co',c:['Веб','Безплатний','ПК']},
+  {n:'Freesound',j:'sound',d:'Бібліотека готових звуків: «хрум», «бум», «перемога».',u:'https://freesound.org',c:['Веб','Безплатний (потрібна реєстрація)','Усі пристрої']},
+  {n:'Trello',j:'plan',d:'Дошка задач: «Треба зробити → Роблю → Готово». Так працюють ІТ-команди.',u:'https://trello.com',c:['Веб + застосунок','Частково безплатний','Усі пристрої']},
+  {n:'Google Keep',j:'plan',d:'Простий список справ із галочками.',u:'https://keep.google.com',c:['Веб + застосунок','Безплатний','Усі пристрої']},
+  {n:'draw.io',j:'map',d:'Блок-схеми та інтелект-карти. Є в підручнику (с. 9–10).',u:'https://www.drawio.com',c:['Веб + програма','Безплатний','ПК']},
+  {n:'MindMup',j:'map',d:'Інтелект-карти в браузері. Карта з завдання 5 підручника зроблена тут.',u:'https://app.mindmup.com',c:['Веб','Частково безплатний','ПК']}
+];
+let job='all';
+function renderTools(){
+  $('#filters').innerHTML=Object.entries(JOBS).map(([k,v])=>`<button data-j="${k}" aria-pressed="${job===k}">${v}</button>`).join('');
+  $$('#filters button').forEach(b=>b.addEventListener('click',()=>{job=b.dataset.j; renderTools();}));
+  $('#tools').innerHTML=TOOLS.filter(t=>job==='all'||t.j===job).map(t=>`<article class="tool-card" style="--c:var(${JC[t.j]})">
+    <span class="job">${JOBS[t.j]}</span><h3>${t.n}</h3><p>${t.d}</p>
+    <div class="chips">${t.c.map(c=>`<span class="${/^Безплатний/.test(c)?'free':/Частково/.test(c)?'part':''}">${c}</span>`).join('')}</div>
+    <a href="${t.u}" target="_blank" rel="noopener">Відкрити ↗</a></article>`).join('');
+}
+renderTools();
+
+const saved=store.get('lab-tab'); if(saved&&$('#p-'+saved)) showTab(saved);
+})();
+</script>
+
+</body>
+</html>
